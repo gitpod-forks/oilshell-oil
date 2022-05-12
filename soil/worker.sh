@@ -101,9 +101,13 @@ pea-tasks() {
   # We need a later version of Python 3 / MyPy both to type check and
   # to parse
 
+  # Run build-minimal so we parse generated code
+  # We will need to type check it, but we won't generate code from it.
+
   # (task_name, script, action, result_html)
   cat <<EOF
 dump-user-host      soil/worker.sh dump-user-host           -
+build-minimal       build/dev.sh minimal                    -
 check-types         test/py3_parse.sh check-types           -
 parse-all           test/py3_parse.sh parse-all             -
 EOF
