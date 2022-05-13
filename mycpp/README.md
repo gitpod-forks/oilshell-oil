@@ -69,23 +69,24 @@ aren't accounted for:
 
 ## Notes on the Algorithm / Architecture
 
-(1) One `const_pass.py`.  Collect string constants.
+There are four passes over the MyPy AST.
+
+(1) `const_pass.py`: Collect string constants 
+
+Turn turn the constant in `myfunc("foo")` into top-level `GLOBAL_STR(str1,
+"foo")`.
   
-(2) Three `cppgen_pass.py` variants.  For each module, Declare and define
-   classes and functions.
+(2) Three passes in `cppgen_pass.py`.
 
 (a) Forward Declaration Pass.
 
     class Foo;
     class Bar;
 
-More work in this pass:
-
-- Determine which methods should be declared `virtual` in their declarations
-  (written in the next pass)
+This pass also determines which methods should be declared `virtual` in their
+declarations.  The `virtual` keyword is written in the next pass.
 
 (b) Declaration Pass.
-
 
     class Foo {
       void method();
@@ -97,7 +98,7 @@ More work in this pass:
 More work in this pass:
 
 - Collect member variables and write them at the end of the definition
-- Collect locals for "hoisting".  Written in pass #3.
+- Collect locals for "hoisting".  Written in the next pass.
 - Creates `fmtN()` functions to compile Python's `%` formatting operator.
 
 (c) Definition Pass.
@@ -124,9 +125,9 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
     returned from a function.  If you want a garbage-collected **reference
     type**, use an ASDL record `(string s, int i)`
 - Classes and inheritance
+  - `__init__` method becomes a constructor.  Note: initializer lists not used.
   - Detect `virtual` methods
   - TODO: could we detect `abstract` methods? (`NotImplementedError`)
-  - Note: initializer lists not used
 - Python Exceptions &rarr; C++ exceptions
 - Scope-based resource management
   - `with ctx_Foo(...)` &rarr; C++ constructors and destructors
@@ -141,13 +142,13 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
   - TODO: can we be smarter about this?
 - `reversed(mylist)` &rarr; `ReverseListIter`
 - `[None] * 3` &rarr; `list_repeat(nullptr, 3)`
-- If the LHS of an assignment is `_`, then the statement is omitted
-  - This is for `_ = log`, which shuts up Python lint warnings for 'unused
-    import'
+- Omit:
+  - If the LHS of an assignment is `_`, then the statement is omitted
+    - This is for `_ = log`, which shuts up Python lint warnings for 'unused
+      import'
+  - Code under `if __name__ == '__main__'`
 
-## C++ Features
-
-### Used
+## C++ Features Used
 
 - For ASDL: type-safe enums, i.e. `enum class`
 - `nullptr`
@@ -164,7 +165,7 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
 - `const`
 - No smart pointers for now
 
-## Notes on mylib
+## Notes on the Runtime (`mylib`)
 
 - A `Str` is immutable, and can be used as a key to a `Dict` (at the Python
   level), and thus an `AssocArray` (at the Oil level).
@@ -172,7 +173,7 @@ Note: I really wish we were not using visitors, but that's inherited from MyPy.
   build it with repeated calls to`write()`, and then call `getvalue()` at the
   end.
 
-## Limitations
+## `mycpp` Limitations
 
 ### Due to the Translation or C++ language
 
